@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Impossible Geometry Explorer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            overflow: hidden;
+            background: #000;
+            font-family: 'Courier New', monospace;
+        }
+        
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #0ff;
+            text-shadow: 0 0 10px #0ff;
+            z-index: 10;
+            font-size: 14px;
+            pointer-events: none;
+        }
+        
+        #title {
+            font-size: 28px;
+            margin-bottom: 10px;
+            letter-spacing: 3px;
+            font-weight: bold;
+        }
+        
+        .glow {
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { opacity: 0.8; }
+            to { opacity: 1; }
+        }
+        
+        #controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #0ff;
+            border-radius: 8px;
+            padding: 12px;
+            color: #0ff;
+            width: 220px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+            font-size: 11px;
+        }
+        
+        #controls h3 {
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+        
+        .control-group {
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+        }
+        
+        .control-group:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .control-group input[type="range"] {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+        
+        .control-group input[type="color"] {
+            width: 100%;
+            height: 28px;
+            border: 1px solid #0ff;
+            background: transparent;
+            cursor: pointer;
+        }
+        
+        .toggle-btn {
+            width: 100%;
+            padding: 6px;
+            background: rgba(0, 255, 255, 0.2);
+            border: 1px solid #0ff;
+            color: #0ff;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s;
+            margin-top: 4px;
+        }
+        
+        .toggle-btn:hover {
+            background: rgba(0, 255, 255, 0.4);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+        }
+        
+        .toggle-btn.active {
+            background: rgba(0, 255, 255, 0.6);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+        }
+        
+        .value-display {
+            font-size: 9px;
+            color: #ff00ff;
+            text-align: right;
+            margin-top: 2px;
+        }
+        
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(0, 255, 255, 0.2);
+            outline: none;
+            height: 4px;
+            border-radius: 2px;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #0ff;
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #0ff;
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 12px;
+            height: 12px;
+            background: #0ff;
+            cursor: pointer;
+            border-radius: 50%;
+            border: none;
+            box-shadow: 0 0 8px #0ff;
+        }
+        
+        #toggleControls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #0ff;
+            color: #0ff;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            border-radius: 5px;
+            z-index: 100;
+        }
+        
+        #toggleControls:hover {
+            background: rgba(0, 255, 255, 0.2);
+        }
+        
+        @media (max-width: 768px) {
+            #controls {
+                width: calc(100% - 40px);
+                right: 20px;
+                left: 20px;
+                max-height: 70vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <div id="title" class="glow">IMPOSSIBLE GEOMETRY</div>
+        <div>Drag to rotate • Scroll to zoom</div>
+    </div>
+    
+    <button id="toggleControls">☰ CONTROLS</button>
+    
+    <div id="controls" style="display: none;">
+        <h3>⚙ CONTROL PANEL</h3>
+        
+        <div class="control-group">
+            <label>Rotation Speed</label>
+            <input type="range" id="speedControl" min="0" max="2" step="0.1" value="1">
+            <div class="value-display" id="speedValue">1.0x</div>
+        </div>
+        
+        <div class="control-group">
+            <label>Camera Distance</label>
+            <input type="range" id="zoomControl" min="8" max="25" step="0.5" value="15">
+            <div class="value-display" id="zoomValue">15</div>
+        </div>
+        
+        <div class="control-group">
+            <label>Particle Count</label>
+            <input type="range" id="particleControl" min="0" max="3000" step="100" value="1000">
+            <div class="value-display" id="particleValue">1000</div>
+        </div>
+        
+        <div class="control-group">
+            <label>Primary Color</label>
+            <input type="color" id="color1" value="#00ffff">
+        </div>
+        
+        <div class="control-group">
+            <label>Secondary Color</label>
+            <input type="color" id="color2" value="#ff00ff">
+        </div>
+        
+        <div class="control-group">
+            <label>Accent Color</label>
+            <input type="color" id="color3" value="#ffff00">
+        </div>
+        
+        <div class="control-group">
+            <label>Toggles</label>
+            <button class="toggle-btn active" id="wireframeToggle">Wireframe: ON</button>
+            <button class="toggle-btn active" id="particlesToggle">Particles: ON</button>
+            <button class="toggle-btn active" id="gridToggle">Grid: ON</button>
+            <button class="toggle-btn active" id="autoRotateToggle">Auto-Rotate: ON</button>
+            <button class="toggle-btn active" id="glowToggle">Glow Effects: ON</button>
+        </div>
+        
+        <div class="control-group">
+            <label>Shape Mode</label>
+            <button class="toggle-btn active" id="shapePenrose">Penrose Triangle</button>
+            <button class="toggle-btn" id="shapeCube">Impossible Cube</button>
+            <button class="toggle-btn" id="shapeStairs">Escher Stairs</button>
+        </div>
+    </div>
+    
+    <canvas id="canvas"></canvas>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer;
+        let mainShape, particles, grid;
+        let mouseX = 0, mouseY = 0;
+        let time = 0;
+        let isDragging = false;
+        
+        // Control variables
+        let config = {
+            speed: 1,
+            zoom: 15,
+            particleCount: 1000,
+            color1: 0x00ffff,
+            color2: 0xff00ff,
+            color3: 0xffff00,
+            wireframe: true,
+            showParticles: true,
+            showGrid: true,
+            autoRotate: true,
+            glow: true,
+            shapeMode: 'penrose'
+        };
+        
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x000000, 10, 50);
+            
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = config.zoom;
+            
+            renderer = new THREE.WebGLRenderer({ 
+                canvas: document.getElementById('canvas'),
+                antialias: true,
+                alpha: true
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            
+            const ambientLight = new THREE.AmbientLight(0x222222);
+            scene.add(ambientLight);
+            
+            const pointLight1 = new THREE.PointLight(config.color1, 2, 100);
+            pointLight1.position.set(10, 10, 10);
+            scene.add(pointLight1);
+            
+            const pointLight2 = new THREE.PointLight(config.color2, 2, 100);
+            pointLight2.position.set(-10, -10, 10);
+            scene.add(pointLight2);
+            
+            createShape();
+            createParticles();
+            createGrid();
+            setupControls();
+            
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mousedown', () => isDragging = true);
+            document.addEventListener('mouseup', () => isDragging = false);
+            window.addEventListener('resize', onWindowResize);
+            
+            animate();
+        }
+        
+        function createShape() {
+            if (mainShape) scene.remove(mainShape);
+            
+            if (config.shapeMode === 'penrose') {
+                mainShape = createPenroseTriangle();
+            } else if (config.shapeMode === 'cube') {
+                mainShape = createImpossibleCube();
+            } else if (config.shapeMode === 'stairs') {
+                mainShape = createEscherStairs();
+            }
+            
+            scene.add(mainShape);
+        }
+        
+        function createPenroseTriangle() {
+            const group = new THREE.Group();
+            const barGeometry = new THREE.BoxGeometry(6, 1, 1);
+            const colors = [config.color1, config.color2, config.color3];
+            
+            for (let i = 0; i < 3; i++) {
+                const material = new THREE.MeshPhongMaterial({ 
+                    color: colors[i], 
+                    emissive: config.glow ? colors[i] : 0x000000, 
+                    emissiveIntensity: config.glow ? 0.5 : 0,
+                    shininess: 100
+                });
+                
+                const bar = new THREE.Mesh(barGeometry, material);
+                const angle = (i * 120) * Math.PI / 180;
+                
+                bar.position.x = Math.cos(angle) * 3;
+                bar.position.y = Math.sin(angle) * 3;
+                bar.rotation.z = angle + Math.PI / 2;
+                
+                if (config.wireframe) {
+                    const wireframe = new THREE.LineSegments(
+                        new THREE.EdgesGeometry(barGeometry),
+                        new THREE.LineBasicMaterial({ color: colors[i], linewidth: 2 })
+                    );
+                    bar.add(wireframe);
+                }
+                
+                group.add(bar);
+            }
+            
+            return group;
+        }
+        
+        function createImpossibleCube() {
+            const group = new THREE.Group();
+            const barGeometry = new THREE.BoxGeometry(5, 0.8, 0.8);
+            const colors = [config.color1, config.color2, config.color3];
+            
+            const positions = [
+                { pos: [0, 2.5, 0], rot: [0, 0, 0] },
+                { pos: [0, -2.5, 0], rot: [0, 0, 0] },
+                { pos: [2.5, 0, 0], rot: [0, 0, Math.PI/2] },
+                { pos: [-2.5, 0, 0], rot: [0, 0, Math.PI/2] },
+                { pos: [0, 0, 2.5], rot: [0, Math.PI/2, 0] },
+                { pos: [0, 0, -2.5], rot: [0, Math.PI/2, 0] }
+            ];
+            
+            positions.forEach((p, i) => {
+                const material = new THREE.MeshPhongMaterial({ 
+                    color: colors[i % 3],
+                    emissive: config.glow ? colors[i % 3] : 0x000000,
+                    emissiveIntensity: config.glow ? 0.5 : 0
+                });
+                
+                const bar = new THREE.Mesh(barGeometry, material);
+                bar.position.set(...p.pos);
+                bar.rotation.set(...p.rot);
+                
+                if (config.wireframe) {
+                    const wireframe = new THREE.LineSegments(
+                        new THREE.EdgesGeometry(barGeometry),
+                        new THREE.LineBasicMaterial({ color: colors[i % 3] })
+                    );
+                    bar.add(wireframe);
+                }
+                
+                group.add(bar);
+            });
+            
+            return group;
+        }
+        
+        function createEscherStairs() {
+            const group = new THREE.Group();
+            const stepGeometry = new THREE.BoxGeometry(3, 0.5, 2);
+            const colors = [config.color1, config.color2, config.color3];
+            
+            for (let i = 0; i < 4; i++) {
+                const material = new THREE.MeshPhongMaterial({ 
+                    color: colors[i % 3],
+                    emissive: config.glow ? colors[i % 3] : 0x000000,
+                    emissiveIntensity: config.glow ? 0.5 : 0
+                });
+                
+                const step = new THREE.Mesh(stepGeometry, material);
+                const angle = (i * 90) * Math.PI / 180;
+                
+                step.position.x = Math.cos(angle) * 3;
+                step.position.y = i * 1.5 - 2.25;
+                step.position.z = Math.sin(angle) * 3;
+                step.rotation.y = angle;
+                
+                if (config.wireframe) {
+                    const wireframe = new THREE.LineSegments(
+                        new THREE.EdgesGeometry(stepGeometry),
+                        new THREE.LineBasicMaterial({ color: colors[i % 3] })
+                    );
+                    step.add(wireframe);
+                }
+                
+                group.add(step);
+            }
+            
+            return group;
+        }
+        
+        function createParticles() {
+            if (particles) scene.remove(particles);
+            
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(config.particleCount * 3);
+            const colors = new Float32Array(config.particleCount * 3);
+            
+            for (let i = 0; i < config.particleCount * 3; i += 3) {
+                positions[i] = (Math.random() - 0.5) * 50;
+                positions[i + 1] = (Math.random() - 0.5) * 50;
+                positions[i + 2] = (Math.random() - 0.5) * 50;
+                
+                const color = new THREE.Color();
+                color.setHSL(Math.random() * 0.3 + 0.5, 1, 0.5);
+                colors[i] = color.r;
+                colors[i + 1] = color.g;
+                colors[i + 2] = color.b;
+            }
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            
+            const material = new THREE.PointsMaterial({
+                size: 0.1,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.6,
+                blending: THREE.AdditiveBlending
+            });
+            
+            particles = new THREE.Points(geometry, material);
+            particles.visible = config.showParticles;
+            scene.add(particles);
+        }
+        
+        function createGrid() {
+            if (grid) scene.remove(grid);
+            
+            grid = new THREE.GridHelper(40, 40, config.color1, config.color2);
+            grid.position.y = -8;
+            grid.material.transparent = true;
+            grid.material.opacity = 0.3;
+            grid.visible = config.showGrid;
+            scene.add(grid);
+        }
+        
+        function setupControls() {
+            const toggleBtn = document.getElementById('toggleControls');
+            const controlsPanel = document.getElementById('controls');
+            
+            toggleBtn.addEventListener('click', () => {
+                const isVisible = controlsPanel.style.display !== 'none';
+                controlsPanel.style.display = isVisible ? 'none' : 'block';
+                toggleBtn.style.display = isVisible ? 'block' : 'none';
+            });
+            
+            controlsPanel.addEventListener('click', (e) => {
+                if (e.target === controlsPanel) {
+                    controlsPanel.style.display = 'none';
+                    toggleBtn.style.display = 'block';
+                }
+            });
+            
+            document.getElementById('speedControl').addEventListener('input', (e) => {
+                config.speed = parseFloat(e.target.value);
+                document.getElementById('speedValue').textContent = config.speed.toFixed(1) + 'x';
+            });
+            
+            document.getElementById('zoomControl').addEventListener('input', (e) => {
+                config.zoom = parseFloat(e.target.value);
+                document.getElementById('zoomValue').textContent = config.zoom.toFixed(1);
+            });
+            
+            document.getElementById('particleControl').addEventListener('input', (e) => {
+                config.particleCount = parseInt(e.target.value);
+                document.getElementById('particleValue').textContent = config.particleCount;
+                createParticles();
+            });
+            
+            document.getElementById('color1').addEventListener('input', (e) => {
+                config.color1 = parseInt(e.target.value.replace('#', '0x'));
+                createShape();
+                createGrid();
+            });
+            
+            document.getElementById('color2').addEventListener('input', (e) => {
+                config.color2 = parseInt(e.target.value.replace('#', '0x'));
+                createShape();
+                createGrid();
+            });
+            
+            document.getElementById('color3').addEventListener('input', (e) => {
+                config.color3 = parseInt(e.target.value.replace('#', '0x'));
+                createShape();
+            });
+            
+            setupToggle('wireframeToggle', 'wireframe', 'Wireframe', () => createShape());
+            setupToggle('particlesToggle', 'showParticles', 'Particles', () => {
+                if (particles) particles.visible = config.showParticles;
+            });
+            setupToggle('gridToggle', 'showGrid', 'Grid', () => {
+                if (grid) grid.visible = config.showGrid;
+            });
+            setupToggle('autoRotateToggle', 'autoRotate', 'Auto-Rotate');
+            setupToggle('glowToggle', 'glow', 'Glow Effects', () => createShape());
+            
+            setupShapeToggle('shapePenrose', 'penrose');
+            setupShapeToggle('shapeCube', 'cube');
+            setupShapeToggle('shapeStairs', 'stairs');
+        }
+        
+        function setupToggle(id, configKey, label, callback) {
+            const btn = document.getElementById(id);
+            btn.addEventListener('click', () => {
+                config[configKey] = !config[configKey];
+                btn.classList.toggle('active');
+                btn.textContent = `${label}: ${config[configKey] ? 'ON' : 'OFF'}`;
+                if (callback) callback();
+            });
+        }
+        
+        function setupShapeToggle(id, mode) {
+            const btn = document.getElementById(id);
+            btn.addEventListener('click', () => {
+                config.shapeMode = mode;
+                document.querySelectorAll('[id^="shape"]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                createShape();
+            });
+        }
+        
+        function onMouseMove(e) {
+            mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+            mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01 * config.speed;
+            
+            if (mainShape) {
+                if (config.autoRotate) {
+                    mainShape.rotation.x = time * 0.5 + (isDragging ? mouseY * 2 : mouseY * 0.5);
+                    mainShape.rotation.y = time * 0.3 + (isDragging ? mouseX * 2 : mouseX * 0.5);
+                    mainShape.rotation.z = Math.sin(time * 0.2) * 0.3;
+                } else if (isDragging) {
+                    mainShape.rotation.x += mouseY * 0.02;
+                    mainShape.rotation.y += mouseX * 0.02;
+                }
+            }
+            
+            if (particles && config.showParticles && config.particleCount > 0) {
+                const positions = particles.geometry.attributes.position.array;
+                for (let i = 0; i < positions.length; i += 3) {
+                    positions[i + 1] += Math.sin(time + positions[i]) * 0.01 * config.speed;
+                    if (positions[i + 1] > 25) positions[i + 1] = -25;
+                }
+                particles.geometry.attributes.position.needsUpdate = true;
+                particles.rotation.y = time * 0.1;
+            }
+            
+            if (grid && config.showGrid) {
+                grid.material.opacity = 0.2 + Math.sin(time * 2) * 0.1;
+            }
+            
+            camera.position.z = config.zoom + Math.sin(time * 0.5) * 0.5;
+            camera.position.x = Math.sin(time * 0.3) * 1;
+            camera.position.y = Math.cos(time * 0.2) * 1;
+            camera.lookAt(scene.position);
+            
+            renderer.render(scene, camera);
+        }
+        
+        init();
+    </script>
+</body>
+</html>
