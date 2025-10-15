@@ -171,7 +171,7 @@
             position: absolute;
             top: 20px;
             right: 20px;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.9);
             border: 2px solid #0ff;
             color: #0ff;
             padding: 10px 15px;
@@ -180,18 +180,76 @@
             font-size: 12px;
             border-radius: 5px;
             z-index: 100;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
         }
         
         #toggleControls:hover {
             background: rgba(0, 255, 255, 0.2);
         }
         
+        #closeControls {
+            width: 100%;
+            padding: 8px;
+            background: rgba(0, 255, 255, 0.1);
+            border: 1px solid #0ff;
+            color: #0ff;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+            margin-top: 10px;
+            border-radius: 4px;
+            position: relative;
+        }
+        
+        #closeControls:hover {
+            background: rgba(0, 255, 255, 0.3);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+        }
+        
+
+        
         @media (max-width: 768px) {
             #controls {
-                width: calc(100% - 40px);
-                right: 20px;
-                left: 20px;
-                max-height: 70vh;
+                position: fixed;
+                width: 90%;
+                max-width: 320px;
+                right: 50%;
+                left: auto;
+                top: 50%;
+                transform: translate(50%, -50%);
+                max-height: 85vh;
+                font-size: 10px;
+                z-index: 101;
+            }
+            
+            #toggleControls {
+                top: 15px;
+                right: 15px;
+                padding: 8px 12px;
+                font-size: 11px;
+            }
+            
+            #info {
+                top: 15px;
+                left: 15px;
+                font-size: 11px;
+            }
+            
+            #title {
+                font-size: 18px;
+                margin-bottom: 5px;
+            }
+            
+            .control-group label {
+                font-size: 9px;
+            }
+            
+            .toggle-btn {
+                font-size: 9px;
+                padding: 8px;
             }
         }
     </style>
@@ -254,6 +312,10 @@
             <button class="toggle-btn active" id="shapePenrose">Penrose Triangle</button>
             <button class="toggle-btn" id="shapeCube">Impossible Cube</button>
             <button class="toggle-btn" id="shapeStairs">Escher Stairs</button>
+        </div>
+        
+        <div class="control-group">
+            <button id="closeControls">✕ Close Panel</button>
         </div>
     </div>
     
@@ -491,20 +553,21 @@
         
         function setupControls() {
             const toggleBtn = document.getElementById('toggleControls');
+            const closeBtn = document.getElementById('closeControls');
             const controlsPanel = document.getElementById('controls');
             
-            toggleBtn.addEventListener('click', () => {
-                const isVisible = controlsPanel.style.display !== 'none';
-                controlsPanel.style.display = isVisible ? 'none' : 'block';
-                toggleBtn.style.display = isVisible ? 'block' : 'none';
-            });
+            function openControls() {
+                controlsPanel.style.display = 'block';
+                toggleBtn.style.display = 'none';
+            }
             
-            controlsPanel.addEventListener('click', (e) => {
-                if (e.target === controlsPanel) {
-                    controlsPanel.style.display = 'none';
-                    toggleBtn.style.display = 'block';
-                }
-            });
+            function closeControls() {
+                controlsPanel.style.display = 'none';
+                toggleBtn.style.display = 'block';
+            }
+            
+            toggleBtn.addEventListener('click', openControls);
+            closeBtn.addEventListener('click', closeControls);
             
             document.getElementById('speedControl').addEventListener('input', (e) => {
                 config.speed = parseFloat(e.target.value);
